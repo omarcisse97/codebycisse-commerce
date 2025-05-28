@@ -1,0 +1,15 @@
+# dotenv secrets
+.env
+.env.* 
+
+# Medusa cache and temp files
+.cache/
+dist/
+
+# OS stuff
+.DS_Store
+
+# Editor stuff
+.vscode/
+*.swp
+
