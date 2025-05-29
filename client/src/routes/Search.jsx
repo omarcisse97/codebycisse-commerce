@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useParams } from 'react-router-dom';
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import Button from "react-bootstrap/Button";
@@ -107,7 +108,8 @@ const priceRangeFilterLoad = (regionObj) => {
     return ranges[regionObj?.currency_code?.toLowerCase()] || []; // Return empty array if currency not found
 };
 
-export default function Home(props) {
+export default function Search(props) {
+    const { keyword } = useParams();
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState(null);
     const [regionid, setRegionid] = useState(props.regionid);
@@ -118,6 +120,7 @@ export default function Home(props) {
     const [priceRangeFilter, setPriceRangeFilter] = useState([]);
     const [loading, setLoading] = useState(true); // Loading state for initial fetch
     const [error, setError] = useState(null);     // Error state
+    const [q, setQ] = useState(keyword)
 
     const [filters, setFilters] = useState({
         category: { name: "", id: "" },
@@ -199,7 +202,7 @@ export default function Home(props) {
         setPage(0);
         setHasMore(true);
         fetchProducts(0);
-    }, [filters, regionid, regionObj]); // regionObj is a dependency because calculated prices depend on its currency
+    }, [filters, regionid, regionObj, q]); // regionObj is a dependency because calculated prices depend on its currency
 
     // Fetch products with applied filters & pagination
     const fetchProducts = async (pageToFetch) => {
@@ -209,6 +212,7 @@ export default function Home(props) {
         try {
             const offset = pageToFetch * limit;
             const query = {
+                q: q,
                 fields: "*variants.calculated_price", // Request product variant prices
                 region_id: regionid,
                 limit,
@@ -316,20 +320,33 @@ export default function Home(props) {
             }));
         }
     };
+    const handleSearch = () => {
+
+    }
 
     return (
         <>
             {/* Hero Section */}
             <section className="bg-dark text-white text-center py-5">
                 <Container>
-                    <h1 className="display-4 fw-bold">Welcome to CodeByCisse Store</h1>
-                    <p className="lead">Shop exclusive deals & discover unique products from around the world.</p>
+                    <h1 className="display-4 fw-bold mb-4">Search</h1>
+                    <Form className="d-flex justify-content-center" onSubmit={handleSearch}>
+                        <Form.Control
+                            type="search"
+                            placeholder="Search products..."
+                            className="me-2 w-50"
+                            aria-label="Search"
+                            value={q}
+                            onChange={(e) => setQ(e.target.value)}
+                        />
+                        <Button variant="light" type="submit">Search</Button>
+                    </Form>
                 </Container>
             </section>
 
             {/* Product Grid + Filters */}
             <Container className="py-5">
-                <h2 className="mb-4 text-center">All Products</h2>
+                <h2 className="mb-4 text-center">{filters.category.name === ""? "All / " : `${filters.category.name} / `}{q}</h2>
                 <Row>
                     {/* Sidebar Filters */}
                     <Col md={3}>

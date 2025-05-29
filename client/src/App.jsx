@@ -6,6 +6,7 @@ import RegionSelector from "./components/RegionSelector";
 import NavHeader from './components/NavHeader'
 import Home from './routes/Home'
 import Product from './routes/Product'
+import Search from "./routes/Search";
 
 function App() {
 
@@ -46,6 +47,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home regionid={regionid} onRegionSelect={onRegionSelect} />} />
         <Route path="products/:id" element={<Product regionid={regionid} onRegionSelect={onRegionSelect} />} />
+        <Route path="search/:keyword" element={<Search regionid={regionid} onRegionSelect={onRegionSelect} />} />
       </Routes>
     </div>
   )
