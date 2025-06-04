@@ -12,6 +12,8 @@ import { medusaClient } from '../utils/client';
 import { FaShoppingCart } from 'react-icons/fa';
 import SearchBar from './SearchBar';
 import { useNavigate } from 'react-router-dom';
+import AuthModal from './AuthModal';
+import LogoutModal from './LogoutModal';
 
 export default function NavHeader(props) {
     const cartCount = localStorage.getItem('cartCount') ?? 0;
@@ -19,12 +21,24 @@ export default function NavHeader(props) {
     const [region, setRegion] = useState({});
     const [regionid, setRegionid] = useState(props.regionid);
     const [searchTerm, setSearchTerm] = useState('');
-    const navigate = useNavigate();
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showLogout, setShowLogout] = useState(false);
+    const [accountTab, setAccountTab] = useState('');
+   
+    const [customer, setCustomer] = useState(null);
 
+    const navigate = useNavigate();
+    
     useEffect(() => {
         const loadRegions = async () => {
             const res = await medusaClient.store.region.list();
             setRegions(res);
+        };
+        const retrieveCustomer = async() => {
+            const cus = await medusaClient.store.customer.retrieve();
+            if(cus?.customer?.has_account === true && cus?.customer.id !== null){
+                setCustomer(cus.customer);
+            }
         };
 
         loadRegions();
@@ -33,7 +47,27 @@ export default function NavHeader(props) {
         if (!props.regionid && savedRegion) {
             props.onRegionSelect(savedRegion);
         }
+        if(props.loggedIn === true){
+            retrieveCustomer();
+        }
     }, []);
+
+   
+
+    useEffect(() => {
+        const retrieveCustomer = async() => {
+            const cus = await medusaClient.store.customer.retrieve();
+            if(cus?.customer?.has_account === true && cus?.customer.id !== null){
+                setCustomer(cus.customer);
+            }
+        };
+        
+        if(props.loggedIn === true){
+            retrieveCustomer();
+        } else {
+            setCustomer(null);
+        }
+    }, [props.loggedIn])
 
     useEffect(() => {
         const getRegion = async () => {
@@ -57,8 +91,66 @@ export default function NavHeader(props) {
         // You can later redirect or filter products here
         navigate(`/search/${searchTerm}`);
     };
+    const getAuthContent = () => {
+        if(!props.loggedIn){
+            return (
+                <Nav className="me-auto">
+                        <NavDropdown
+                            title="👤 Account"
+                            id="account-options"
+                            menuVariant="dark"
+                            className="text-light"
+                        >
+                            <NavDropdown.Item
+                            onClick={() => {setAccountTab('login'); setShowAuthModal(true); }}
+                            >
+                                🔐 Sign In
+                            </NavDropdown.Item>
+                            <NavDropdown.Item
+                            onClick={() => {setAccountTab('register'); setShowAuthModal(true)}}
+                            >
+                               ➕👤 Register
+                            </NavDropdown.Item>
+                        </NavDropdown>
+                    </Nav>
+            );
+        } else if(props.loggedIn) {
+            return (
+                <Nav className="me-auto">
+                        <NavDropdown
+                            title={customer?customer?.last_name !== ''?
+                            customer?.first_name !== ''?
+                                `${customer?.first_name} ${customer?.last_name}`
+                                : customer?.last_name
+                           : customer?.first_name !== ''?
+                                customer?.first_name : customer?.email : 'loading'}
+                            id="account-options"
+                            menuVariant="dark"
+                            className="text-light"
+                        >
+                            <NavDropdown.Item
+                           
+                            >
+                                Profile
+                            </NavDropdown.Item>
+                            <NavDropdown.Item
+                                
+                            >
+                               Settings
+                            </NavDropdown.Item>
+                            <NavDropdown.Item
+                                onClick={() => { setShowLogout(true)}}
+                            >
+                               Sign out
+                            </NavDropdown.Item>
+                        </NavDropdown>
+                    </Nav>
+            );
+        }
+    }
 
     return (
+        <>
         <Navbar bg="dark" variant="dark" expand="lg" className="shadow-sm py-2">
             <Container fluid>
                 <Navbar.Brand as={Link} to="/" className="fw-bold text-light">
@@ -96,6 +188,8 @@ export default function NavHeader(props) {
                             onSearch={handleSearch}
                         />
                     </div>
+                    
+                    {getAuthContent()}
                     <Nav className="ms-auto d-flex align-items-center">
                         <Button as={Link} to="/cart" variant="success" className="d-flex align-items-center">
                             <FaShoppingCart className="me-2" />
@@ -106,5 +200,12 @@ export default function NavHeader(props) {
                 </Navbar.Collapse>
             </Container>
         </Navbar>
+        <AuthModal show={showAuthModal} handleClose={() => setShowAuthModal(false)} tab={accountTab} setLoggedIn={props.setLoggedIn} />
+        <LogoutModal
+        show={showLogout}
+        onHide={() => setShowLogout(false)}
+        setLoggedIn={props.setLoggedIn}
+      />
+        </>
     );
 }
